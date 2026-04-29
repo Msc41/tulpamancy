@@ -16,7 +16,6 @@ import {
   loadPersistedState,
   savePersistedState,
 } from './idb.mjs';
-import { resolveViewportMetrics } from './viewport.mjs';
 
 const app = document.querySelector('#app');
 const importFileInput = document.querySelector('#import-file');
@@ -28,9 +27,7 @@ let activeThreadId = null;
 let draftSenderId = null;
 let profileSheet = null;
 let pendingAvatarIdentityId = null;
-let stableViewportHeight = 0;
 
-setupViewportHandling();
 boot();
 
 async function boot() {
@@ -636,41 +633,17 @@ function focusDraft() {
   requestAnimationFrame(() => document.querySelector('#draft')?.focus());
 }
 
-function setupViewportHandling() {
-  const updateViewport = () => {
-    const activeElement = document.activeElement;
-    const isTextInputFocused = Boolean(activeElement && (
-      activeElement.matches('textarea, input, select') || activeElement.isContentEditable
-    ));
-    const metrics = resolveViewportMetrics({
-      previousHeight: stableViewportHeight,
-      windowInnerHeight: window.innerHeight,
-      visualViewportHeight: window.visualViewport?.height,
-      visualViewportOffsetTop: window.visualViewport?.offsetTop,
-      isTextInputFocused,
-    });
+document.addEventListener('focusin', (event) => {
+  if (route === 'chat' && event.target.matches('#draft')) {
+    window.setTimeout(scrollMessagesToBottom, 120);
+  }
+});
 
-    stableViewportHeight = metrics.layoutHeight;
-    document.documentElement.style.setProperty('--app-height', `${metrics.layoutHeight}px`);
-    document.documentElement.style.setProperty('--keyboard-inset', `${metrics.keyboardInset}px`);
-    document.body.classList.toggle('keyboard-open', metrics.keyboardInset > 0);
-
-    if (route === 'chat') {
-      requestAnimationFrame(scrollMessagesToBottom);
-    }
-  };
-
-  updateViewport();
-  window.addEventListener('resize', updateViewport);
-  window.addEventListener('orientationchange', () => {
-    stableViewportHeight = 0;
-    window.setTimeout(updateViewport, 250);
-  });
-  window.visualViewport?.addEventListener('resize', updateViewport);
-  window.visualViewport?.addEventListener('scroll', updateViewport);
-  document.addEventListener('focusin', () => window.setTimeout(updateViewport, 50));
-  document.addEventListener('focusout', () => window.setTimeout(updateViewport, 250));
-}
+window.addEventListener('resize', () => {
+  if (route === 'chat') {
+    window.setTimeout(scrollMessagesToBottom, 120);
+  }
+});
 
 function shouldShowTime(previousMessage, message) {
   if (!previousMessage) {
