@@ -24,7 +24,6 @@ const avatarFileInput = document.querySelector('#avatar-file');
 let state = createEmptyState();
 let route = 'threads';
 let activeThreadId = null;
-let draftSenderId = null;
 let profileSheet = null;
 let pendingAvatarIdentityId = null;
 
@@ -169,10 +168,6 @@ function renderHomeHeader(activeIdentity, mode = 'threads') {
 
 function renderChat(activeIdentity) {
   const view = getConversationView(state, activeThreadId, activeIdentity.id);
-  const validSenderIds = new Set([view.viewerIdentity.id, view.otherIdentity.id]);
-  if (!validSenderIds.has(draftSenderId)) {
-    draftSenderId = view.viewerIdentity.id;
-  }
 
   let previousMessage = null;
   const messages = view.messages.map((message) => {
@@ -202,14 +197,6 @@ function renderChat(activeIdentity) {
         ${messages}
       </div>
       <form class="composer" data-action="send-message">
-        <div class="sender-toggle" role="group" aria-label="选择发送者">
-          <button class="${draftSenderId === view.viewerIdentity.id ? 'active' : ''}" type="button" data-action="set-sender" data-sender-id="${view.viewerIdentity.id}">
-            ${escapeHtml(view.viewerIdentity.name)}
-          </button>
-          <button class="${draftSenderId === view.otherIdentity.id ? 'active' : ''}" type="button" data-action="set-sender" data-sender-id="${view.otherIdentity.id}">
-            ${escapeHtml(view.otherIdentity.name)}
-          </button>
-        </div>
         <div class="composer-row">
           <textarea id="draft" rows="1" placeholder="输入消息" autocomplete="off"></textarea>
           <button class="send-button" type="submit">发送</button>
@@ -347,7 +334,6 @@ app.addEventListener('click', async (event) => {
   const action = target.dataset.action;
   if (action === 'open-thread') {
     activeThreadId = target.dataset.threadId;
-    draftSenderId = state.activeIdentityId;
     route = 'chat';
     profileSheet = null;
     render();
@@ -361,12 +347,6 @@ app.addEventListener('click', async (event) => {
     route = 'threads';
     activeThreadId = null;
     render();
-  }
-
-  if (action === 'set-sender') {
-    draftSenderId = target.dataset.senderId;
-    render();
-    focusDraft();
   }
 
   if (action === 'create-contact') {
@@ -403,7 +383,6 @@ app.addEventListener('click', async (event) => {
     state = switchActiveIdentity(state, target.dataset.identityId);
     route = 'threads';
     activeThreadId = null;
-    draftSenderId = state.activeIdentityId;
     profileSheet = null;
     await persist();
     render();
@@ -444,7 +423,7 @@ app.addEventListener('submit', async (event) => {
     try {
       ({ state } = addMessage(state, {
         threadId: activeThreadId,
-        senderId: draftSenderId || state.activeIdentityId,
+        senderId: state.activeIdentityId,
         body,
       }));
       await persist();
@@ -490,7 +469,6 @@ importFileInput.addEventListener('change', async () => {
     state = importDiaryData(text);
     route = 'threads';
     activeThreadId = null;
-    draftSenderId = state.activeIdentityId;
     profileSheet = null;
     await persist();
     render();
@@ -530,7 +508,6 @@ async function createContact() {
   const threadResult = openContactThread(state, activeIdentity.id, result.identity.id);
   state = threadResult.state;
   activeThreadId = threadResult.thread.id;
-  draftSenderId = activeIdentity.id;
   route = 'chat';
   profileSheet = null;
   await persist();
@@ -542,7 +519,6 @@ async function openContact(identityId) {
   const result = openContactThread(state, activeIdentity.id, identityId);
   state = result.state;
   activeThreadId = result.thread.id;
-  draftSenderId = activeIdentity.id;
   route = 'chat';
   profileSheet = null;
   await persist();
@@ -558,7 +534,6 @@ async function resetData() {
   state = createSeedState();
   route = 'threads';
   activeThreadId = null;
-  draftSenderId = state.activeIdentityId;
   profileSheet = null;
   await persist();
   render();
@@ -614,10 +589,6 @@ function scrollMessagesToBottom() {
   if (messageList) {
     messageList.scrollTop = messageList.scrollHeight;
   }
-}
-
-function focusDraft() {
-  requestAnimationFrame(() => document.querySelector('#draft')?.focus());
 }
 
 document.addEventListener('focusin', (event) => {

@@ -4,19 +4,22 @@ import { readFile } from 'node:fs/promises';
 
 const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
-test('critical viewport containers keep a vh fallback before dvh', () => {
-  assertBlockHasHeightFallback('body');
-  assertBlockHasHeightFallback('.app-shell');
-});
+test('layout uses fixed iPhone 14 chrome dimensions', () => {
+  const root = findRuleBlock(':root');
+  assert.match(root, /--iphone-w:\s*390px;/);
+  assert.match(root, /--iphone-h:\s*844px;/);
+  assert.match(root, /--statusbar-h:\s*47px;/);
+  assert.match(root, /--navbar-h:\s*44px;/);
+  assert.match(root, /--tabbar-h:\s*49px;/);
 
-function assertBlockHasHeightFallback(selector) {
-  const block = findRuleBlock(selector);
-  const fallbackIndex = block.indexOf('100vh');
-  const dynamicIndex = block.indexOf('100dvh');
-  assert.ok(fallbackIndex >= 0, `${selector} should include a 100vh fallback`);
-  assert.ok(dynamicIndex >= 0, `${selector} should include a 100dvh value`);
-  assert.ok(fallbackIndex < dynamicIndex, `${selector} should declare 100vh before 100dvh`);
-}
+  const shell = findRuleBlock('.app-shell');
+  assert.match(shell, /width:\s*var\(--iphone-w\);/);
+  assert.match(shell, /height:\s*var\(--iphone-h\);/);
+
+  const chat = findRuleBlock('.screen-chat');
+  assert.match(chat, /height:\s*var\(--iphone-h\);/);
+  assert.match(chat, /overflow:\s*hidden;/);
+});
 
 function findRuleBlock(selector) {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
