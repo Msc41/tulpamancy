@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="对话日记图标">
+  <rect width="512" height="512" rx="112" fill="#ededed"/>
+  <rect x="90" y="128" width="278" height="154" rx="42" fill="#ffffff"/>
+  <path d="M168 266l-54 58 12-78z" fill="#ffffff"/>
+  <rect x="158" y="176" width="148" height="24" rx="12" fill="#b9bec4"/>
+  <rect x="158" y="220" width="96" height="24" rx="12" fill="#d5d8dc"/>
+  <rect x="154" y="258" width="268" height="138" rx="42" fill="#95ec69"/>
+  <path d="M356 382l52 56-10-76z" fill="#95ec69"/>
+  <rect x="210" y="306" width="150" height="24" rx="12" fill="#2b7f34" opacity=".45"/>
+  <rect x="264" y="350" width="96" height="24" rx="12" fill="#2b7f34" opacity=".28"/>
+</svg>
