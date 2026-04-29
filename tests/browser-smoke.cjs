@@ -159,14 +159,14 @@ const viewports = [
       assert.equal(chatLayout.screenWidth, 390, 'chat screen should use iPhone 14 width');
       assert.equal(chatLayout.screenHeight, 844, 'chat screen should use iPhone 14 height');
       assert.equal(chatLayout.chatbarHeight, 44, 'chatbar should use iPhone navigation bar height');
-      assert.equal(chatLayout.chatbarTop, 47, 'chatbar should stay below the fixed status bar');
+      assert.equal(chatLayout.chatbarTop, 0, 'chatbar should align with the top of the PWA content');
       assert.ok(chatLayout.messagesCanScroll, 'messages area should scroll independently');
-      assert.ok(chatLayout.messagesTop > chatLayout.chatbarTop, 'messages should be below chatbar');
+      assert.equal(chatLayout.messagesTop, 44, 'messages should start below the chatbar');
       assert.ok(chatLayout.messagesBottom <= chatLayout.composerTop + 1, 'messages should end before composer');
       assert.ok(chatLayout.composerBottom <= chatLayout.screenHeight + 1, 'composer should stay within chat screen');
       assert.equal(focusLayout.before.scrollY, 0, 'page should start unscrolled');
       assert.equal(focusLayout.after.scrollY, 0, 'focusing draft should not scroll the page');
-      assert.equal(focusLayout.after.chatbarTop, 47, 'chatbar should remain fixed after focusing draft');
+      assert.equal(focusLayout.after.chatbarTop, 0, 'chatbar should remain fixed after focusing draft');
       assert.equal(chatBackgrounds.screen, chatBackgrounds.expected, 'chat screen background should match home background');
       assert.equal(chatBackgrounds.messages, chatBackgrounds.expected, 'messages background should match home background');
 

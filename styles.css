@@ -810,7 +810,7 @@ body {
 
 .chatbar {
   position: fixed;
-  top: var(--statusbar-h);
+  top: 0;
   left: max(0px, calc((100vw - var(--iphone-w)) / 2));
   z-index: 20;
   width: var(--iphone-w);
@@ -828,7 +828,7 @@ body {
 
 .messages {
   position: fixed;
-  top: calc(var(--statusbar-h) + var(--navbar-h));
+  top: var(--navbar-h);
   bottom: var(--composer-h);
   left: max(0px, calc((100vw - var(--iphone-w)) / 2));
   width: var(--iphone-w);

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chat-diary-pwa-v8';
+const CACHE_NAME = 'chat-diary-pwa-v9';
 const APP_SHELL = [
   './',
   './index.html',
