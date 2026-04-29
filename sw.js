@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chat-diary-pwa-v4';
+const CACHE_NAME = 'chat-diary-pwa-v3';
 const APP_SHELL = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const APP_SHELL = [
   './src/app.mjs',
   './src/domain.mjs',
   './src/idb.mjs',
+  './src/viewport.mjs',
 ];
 
 self.addEventListener('install', (event) => {
