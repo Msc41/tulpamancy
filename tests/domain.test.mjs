@@ -9,6 +9,8 @@ import {
   getConversationView,
   importDiaryData,
   ensureThread,
+  openContactThread,
+  updateIdentity,
 } from '../src/domain.mjs';
 
 test('mirrors the same conversation when switching account perspective', () => {
@@ -103,4 +105,69 @@ test('rejects empty messages after trimming whitespace', () => {
       body: '   ',
     });
   }, /empty/i);
+});
+
+test('stores and exports custom avatar image data for identities', () => {
+  let state = createEmptyState();
+  ({ state } = addIdentity(state, {
+    id: 'id-a',
+    name: 'A',
+    avatarColor: '#5fc66a',
+    avatarImageDataUrl: 'data:image/jpeg;base64,avatar-a',
+  }));
+
+  const imported = importDiaryData(exportDiaryData(state));
+
+  assert.equal(imported.identities[0].avatarColor, '#5fc66a');
+  assert.equal(imported.identities[0].avatarImageDataUrl, 'data:image/jpeg;base64,avatar-a');
+});
+
+test('imports legacy backups that do not include avatar image data', () => {
+  const imported = importDiaryData({
+    schemaVersion: 1,
+    activeIdentityId: 'id-a',
+    identities: [
+      {
+        id: 'id-a',
+        name: 'A',
+        avatarColor: '#5fc66a',
+        createdAt: '2026-04-29T08:00:00.000Z',
+      },
+    ],
+    threads: [],
+    messages: [],
+  });
+
+  assert.equal(imported.identities[0].avatarImageDataUrl, null);
+});
+
+test('updates identity nickname and avatar image without changing conversations', () => {
+  let state = createEmptyState();
+  ({ state } = addIdentity(state, { id: 'id-a', name: 'A' }));
+  ({ state } = addIdentity(state, { id: 'id-b', name: 'B' }));
+  ({ state } = ensureThread(state, 'id-a', 'id-b', { id: 'thread-ab' }));
+
+  state = updateIdentity(state, 'id-b', {
+    name: '新的 B',
+    avatarImageDataUrl: 'data:image/png;base64,new-avatar',
+  });
+
+  const view = getConversationView(state, 'thread-ab', 'id-a');
+  assert.equal(view.otherIdentity.name, '新的 B');
+  assert.equal(view.otherIdentity.avatarImageDataUrl, 'data:image/png;base64,new-avatar');
+  assert.equal(state.threads.length, 1);
+});
+
+test('opens an existing contact thread or creates one when missing', () => {
+  let state = createEmptyState();
+  ({ state } = addIdentity(state, { id: 'id-a', name: 'A' }));
+  ({ state } = addIdentity(state, { id: 'id-b', name: 'B' }));
+
+  const created = openContactThread(state, 'id-a', 'id-b', { id: 'thread-ab' });
+  const reused = openContactThread(created.state, 'id-b', 'id-a', { id: 'thread-ba' });
+
+  assert.equal(created.created, true);
+  assert.equal(reused.created, false);
+  assert.equal(created.thread.id, reused.thread.id);
+  assert.equal(reused.state.threads.length, 1);
 });

@@ -30,6 +30,7 @@ export function addIdentity(state, input = {}) {
     id,
     name,
     avatarColor: input.avatarColor || AVATAR_COLORS[state.identities.length % AVATAR_COLORS.length],
+    avatarImageDataUrl: normalizeOptionalImageDataUrl(input.avatarImageDataUrl),
     createdAt: input.createdAt || nowIso(),
   };
 
@@ -48,6 +49,27 @@ export function switchActiveIdentity(state, identityId) {
   return {
     ...state,
     activeIdentityId: identityId,
+  };
+}
+
+export function updateIdentity(state, identityId, patch = {}) {
+  const current = requireIdentity(state, identityId);
+  const updated = {
+    ...current,
+    name: hasOwn(patch, 'name') ? normalizeName(patch.name) : current.name,
+    avatarColor: hasOwn(patch, 'avatarColor')
+      ? requireString(patch.avatarColor, 'avatar color')
+      : current.avatarColor,
+    avatarImageDataUrl: hasOwn(patch, 'avatarImageDataUrl')
+      ? normalizeOptionalImageDataUrl(patch.avatarImageDataUrl)
+      : current.avatarImageDataUrl,
+  };
+
+  return {
+    ...state,
+    identities: state.identities.map((identity) => (
+      identity.id === identityId ? updated : identity
+    )),
   };
 }
 
@@ -82,6 +104,10 @@ export function ensureThread(state, firstIdentityId, secondIdentityId, input = {
       threads: [...state.threads, thread],
     },
   };
+}
+
+export function openContactThread(state, activeIdentityId, contactIdentityId, input = {}) {
+  return ensureThread(state, activeIdentityId, contactIdentityId, input);
 }
 
 export function addMessage(state, input = {}) {
@@ -189,6 +215,7 @@ function normalizeState(input) {
     id: requireString(identity.id, 'identity id'),
     name: normalizeName(identity.name),
     avatarColor: requireString(identity.avatarColor || '#5fc66a', 'avatar color'),
+    avatarImageDataUrl: normalizeOptionalImageDataUrl(identity.avatarImageDataUrl),
     createdAt: normalizeDate(identity.createdAt),
   }));
 
@@ -309,6 +336,21 @@ function normalizeMessageBody(body) {
     throw new Error('Message cannot be empty.');
   }
   return normalized;
+}
+
+function normalizeOptionalImageDataUrl(value) {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+  const normalized = requireString(value, 'avatar image');
+  if (!/^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(normalized)) {
+    throw new Error('Avatar image must be a data URL.');
+  }
+  return normalized;
+}
+
+function hasOwn(object, key) {
+  return Object.prototype.hasOwnProperty.call(object, key);
 }
 
 function normalizeDate(value) {
