@@ -40,6 +40,7 @@ const viewports = [
         buttons.map((button) => button.getAttribute('aria-label'))
       ));
       assert.deepEqual(navLabels, ['消息', '联系人']);
+      assert.equal(await page.getByText(/还没有消息|从第一句话开始/).count(), 0);
 
       await page.locator('[data-action="open-account-panel"]').click();
       await assertVisibleText(page, '切换账号');
@@ -60,30 +61,56 @@ const viewports = [
       await page.getByRole('button', { name: '发送' }).click();
       await page.locator('.message-row').nth(1).waitFor();
 
+      for (let index = 0; index < 24; index += 1) {
+        await page.locator('#draft').fill(`连续消息 ${index + 1}`);
+        await page.getByRole('button', { name: '发送' }).click();
+      }
+
       const before = await readMessages(page);
-      await page.getByRole('button', { name: '切换到对方账号' }).click();
-      await page.waitForTimeout(150);
-      const after = await readMessages(page);
+      const hasSwapButton = await page.getByRole('button', { name: '切换到对方账号' }).count();
+      const emptyPrompts = await page.getByText(/还没有消息|从第一句话开始/).count();
       const overflow = await page.evaluate(() => ({
         bodyScrollWidth: document.body.scrollWidth,
         viewportWidth: document.documentElement.clientWidth,
         appScrollWidth: document.querySelector('#app').scrollWidth,
         appClientWidth: document.querySelector('#app').clientWidth,
       }));
+      const chatLayout = await page.evaluate(() => {
+        const screen = document.querySelector('.screen-chat');
+        const chatbar = document.querySelector('.chatbar');
+        const messages = document.querySelector('.messages');
+        const composer = document.querySelector('.composer');
+        const screenRect = screen.getBoundingClientRect();
+        const chatbarRect = chatbar.getBoundingClientRect();
+        const messagesRect = messages.getBoundingClientRect();
+        const composerRect = composer.getBoundingClientRect();
+        return {
+          screenHeight: Math.round(screenRect.height),
+          viewportHeight: window.innerHeight,
+          chatbarTop: Math.round(chatbarRect.top - screenRect.top),
+          messagesCanScroll: messages.scrollHeight > messages.clientHeight,
+          messagesTop: Math.round(messagesRect.top - screenRect.top),
+          messagesBottom: Math.round(messagesRect.bottom - screenRect.top),
+          composerTop: Math.round(composerRect.top - screenRect.top),
+          composerBottom: Math.round(composerRect.bottom - screenRect.top),
+        };
+      });
 
-      assert.deepEqual(before, [
-        { side: 'outgoing', text: 'A 视角发出的第一条' },
-        { side: 'incoming', text: 'B 手动回复' },
-      ]);
-      assert.deepEqual(after, [
-        { side: 'incoming', text: 'A 视角发出的第一条' },
-        { side: 'outgoing', text: 'B 手动回复' },
-      ]);
+      assert.equal(before.at(0).text, 'A 视角发出的第一条');
+      assert.equal(before.at(1).text, 'B 手动回复');
+      assert.equal(hasSwapButton, 0);
+      assert.equal(emptyPrompts, 0);
       assert.equal(errors.length, 0);
       assert.ok(overflow.bodyScrollWidth <= overflow.viewportWidth, 'body should not overflow horizontally');
       assert.ok(overflow.appScrollWidth <= overflow.appClientWidth, 'app should not overflow horizontally');
+      assert.ok(chatLayout.screenHeight <= chatLayout.viewportHeight, 'chat screen should not exceed viewport height');
+      assert.equal(chatLayout.chatbarTop, 0, 'chatbar should stay at the top of chat screen');
+      assert.ok(chatLayout.messagesCanScroll, 'messages area should scroll independently');
+      assert.ok(chatLayout.messagesTop > chatLayout.chatbarTop, 'messages should be below chatbar');
+      assert.ok(chatLayout.messagesBottom <= chatLayout.composerTop + 1, 'messages should end before composer');
+      assert.ok(chatLayout.composerBottom <= chatLayout.screenHeight + 1, 'composer should stay within chat screen');
 
-      results.push({ viewport, messagesMirror: true, overflow });
+      results.push({ viewport, fixedChatLayout: true, overflow, chatLayout });
       await context.close();
     }
 

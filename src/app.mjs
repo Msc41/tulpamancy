@@ -94,7 +94,7 @@ function renderThreads(activeIdentity) {
       ${renderAvatar(thread.otherIdentity, 'thread-avatar')}
       <span class="thread-main">
         <span class="thread-title">${escapeHtml(thread.otherIdentity.name)}</span>
-        <span class="thread-preview">${escapeHtml(thread.lastMessage?.body || '还没有消息')}</span>
+        <span class="thread-preview">${escapeHtml(thread.lastMessage?.body || '')}</span>
       </span>
       <span class="thread-side">
         <span class="thread-time">${thread.lastMessage ? formatListTime(thread.lastMessage.createdAt) : ''}</span>
@@ -110,8 +110,8 @@ function renderThreads(activeIdentity) {
           <span class="search-icon">⌕</span>
           <span>搜索</span>
         </div>
-        <div class="thread-list">
-          ${threadItems || '<div class="empty-state">还没有消息</div>'}
+      <div class="thread-list">
+          ${threadItems}
         </div>
       </div>
       ${renderBottomNav('threads')}
@@ -194,12 +194,12 @@ function renderChat(activeIdentity) {
         <button class="back-button" type="button" data-action="back-to-threads" aria-label="返回">‹</button>
         <div class="chat-title">
           <strong>${escapeHtml(view.otherIdentity.name)}</strong>
-          <span>${escapeHtml(activeIdentity.name)} 的视角</span>
+          <span>${escapeHtml(activeIdentity.name)}</span>
         </div>
-        <button class="icon-button subtle" type="button" data-action="swap-account" aria-label="切换到对方账号">⇄</button>
+        <span class="chatbar-spacer" aria-hidden="true"></span>
       </header>
       <div class="messages" id="message-list">
-        ${messages || '<div class="empty-state chat-empty">从第一句话开始</div>'}
+        ${messages}
       </div>
       <form class="composer" data-action="send-message">
         <div class="sender-toggle" role="group" aria-label="选择发送者">
@@ -361,10 +361,6 @@ app.addEventListener('click', async (event) => {
     route = 'threads';
     activeThreadId = null;
     render();
-  }
-
-  if (action === 'swap-account') {
-    await swapToOtherAccount();
   }
 
   if (action === 'set-sender') {
@@ -553,15 +549,6 @@ async function openContact(identityId) {
   render();
 }
 
-async function swapToOtherAccount() {
-  const view = getConversationView(state, activeThreadId, state.activeIdentityId);
-  state = switchActiveIdentity(state, view.otherIdentity.id);
-  draftSenderId = view.otherIdentity.id;
-  route = 'chat';
-  await persist();
-  render();
-}
-
 async function resetData() {
   if (!confirm('清空后只能通过备份恢复。继续？')) {
     return;
@@ -632,6 +619,18 @@ function scrollMessagesToBottom() {
 function focusDraft() {
   requestAnimationFrame(() => document.querySelector('#draft')?.focus());
 }
+
+document.addEventListener('focusin', (event) => {
+  if (route === 'chat' && event.target.matches('#draft')) {
+    window.setTimeout(scrollMessagesToBottom, 120);
+  }
+});
+
+window.addEventListener('resize', () => {
+  if (route === 'chat') {
+    window.setTimeout(scrollMessagesToBottom, 120);
+  }
+});
 
 function shouldShowTime(previousMessage, message) {
   if (!previousMessage) {
