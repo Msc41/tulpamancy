@@ -3,7 +3,7 @@
   --canvas: #dfe1e5;
   --surface: #ededed;
   --surface-raised: #f8f8f8;
-  --chat-bg: #f1eee7;
+  --chat-bg: #edf2fc;
   --ink: #161616;
   --muted: #777c83;
   --line: rgba(0, 0, 0, 0.08);
@@ -823,7 +823,7 @@ body {
 }
 
 .screen-chat {
-  background: #ece9e2;
+  background: var(--qq-canvas);
 }
 
 .chatbar {
@@ -838,7 +838,7 @@ body {
 }
 
 .messages {
-  background: #ece9e2;
+  background: var(--qq-canvas);
 }
 
 .profile-sheet {

@@ -95,6 +95,23 @@ const viewports = [
           composerBottom: Math.round(composerRect.bottom - screenRect.top),
         };
       });
+      const chatBackgrounds = await page.evaluate(() => {
+        const screen = document.querySelector('.screen-chat');
+        const messages = document.querySelector('.messages');
+        const expectedColor = getComputedStyle(document.documentElement)
+          .getPropertyValue('--qq-canvas')
+          .trim();
+        const probe = document.createElement('div');
+        probe.style.background = expectedColor;
+        document.body.append(probe);
+        const expected = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return {
+          expected,
+          screen: getComputedStyle(screen).backgroundColor,
+          messages: getComputedStyle(messages).backgroundColor,
+        };
+      });
 
       assert.equal(before.at(0).text, 'A 视角发出的第一条');
       assert.equal(before.at(1).text, 'B 手动回复');
@@ -109,8 +126,10 @@ const viewports = [
       assert.ok(chatLayout.messagesTop > chatLayout.chatbarTop, 'messages should be below chatbar');
       assert.ok(chatLayout.messagesBottom <= chatLayout.composerTop + 1, 'messages should end before composer');
       assert.ok(chatLayout.composerBottom <= chatLayout.screenHeight + 1, 'composer should stay within chat screen');
+      assert.equal(chatBackgrounds.screen, chatBackgrounds.expected, 'chat screen background should match home background');
+      assert.equal(chatBackgrounds.messages, chatBackgrounds.expected, 'messages background should match home background');
 
-      results.push({ viewport, fixedChatLayout: true, overflow, chatLayout });
+      results.push({ viewport, fixedChatLayout: true, overflow, chatLayout, chatBackgrounds });
       await context.close();
     }
 
